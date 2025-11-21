@@ -1,6 +1,7 @@
 package com.game.zone.controller
 
 import com.game.zone.model.Usuario
+import com.game.zone.repository.UsuarioRepository
 import com.game.zone.service.UsuarioService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -8,7 +9,7 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/usuarios")
-class UsuarioController(private val usuarioService: UsuarioService) {
+class UsuarioController(private val usuarioService: UsuarioService, private val usuarioRepository: UsuarioRepository) {
 
     @GetMapping
     fun getAllUsuarios(): List<Usuario> = usuarioService.getAllUsuarios()
@@ -42,6 +43,24 @@ class UsuarioController(private val usuarioService: UsuarioService) {
 
         val nuevoUsuario = usuarioService.createUsuario(usuario)
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoUsuario)
+    }
+
+    @PostMapping("/usuarios/login")
+    fun login(
+        @RequestParam correo: String,
+        @RequestParam clave: String
+    ): ResponseEntity<Usuario> {
+        return try {
+            val usuario = usuarioRepository.findByCorreo(correo)
+
+            if (usuario != null && usuario.clave == clave) {
+                ResponseEntity.ok(usuario)
+            } else {
+                ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null)
+            }
+        } catch (e: Exception) {
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null)
+        }
     }
 
     @PutMapping("/{id}")
