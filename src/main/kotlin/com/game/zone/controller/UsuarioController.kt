@@ -14,6 +14,34 @@ class UsuarioController(private val usuarioService: UsuarioService, private val 
     @GetMapping
     fun getAllUsuarios(): List<Usuario> = usuarioService.getAllUsuarios()
 
+    @GetMapping("auth/login")
+    fun login(
+        @RequestParam(required = false) correo: String?,
+        @RequestParam(required = false) clave: String?
+    ): ResponseEntity<Usuario> {
+        println("Correo recibido: '$correo'")
+        println(" Clave recibida: '$clave'")
+
+        if (correo == null || clave == null) {
+            println(" Parámetros faltantes")
+            return ResponseEntity.badRequest().body(null)
+        }
+
+        return try {
+            val usuario = usuarioRepository.findByCorreo(correo)
+            println(" Usuario encontrado: $usuario")
+
+            if (usuario != null && usuario.clave == clave) {
+                ResponseEntity.ok(usuario)
+            } else {
+                ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null)
+            }
+        } catch (e: Exception) {
+            println("Error: ${e.message}")
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null)
+        }
+    }
+
     @GetMapping("/{id}")
     fun getUsuarioById(@PathVariable id: Int): ResponseEntity<Usuario> {
         val usuario = usuarioService.getUsuarioById(id)
@@ -45,23 +73,7 @@ class UsuarioController(private val usuarioService: UsuarioService, private val 
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoUsuario)
     }
 
-    @PostMapping("/usuarios/login")
-    fun login(
-        @RequestParam correo: String,
-        @RequestParam clave: String
-    ): ResponseEntity<Usuario> {
-        return try {
-            val usuario = usuarioRepository.findByCorreo(correo)
 
-            if (usuario != null && usuario.clave == clave) {
-                ResponseEntity.ok(usuario)
-            } else {
-                ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null)
-            }
-        } catch (e: Exception) {
-            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null)
-        }
-    }
 
     @PutMapping("/{id}")
     fun updateUsuario(@PathVariable id: Int, @RequestBody usuario: Usuario): ResponseEntity<Usuario> {
